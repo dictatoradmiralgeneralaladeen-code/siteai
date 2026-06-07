@@ -243,7 +243,7 @@ function CollapsibleSection({ title, emoji, color="#0284c7", collapsed, onToggle
 }
 
 // ── PREDICTION SUMMARY ───────────────────────────────────
-function PredictionSummary({ actPreds, catPreds }) {
+function PredictionSummary({ actPreds, catPreds, mob }) {
   const cats=['Substructure','Structure','Finishing']
   return (
     <div style={{display:"grid",gridTemplateColumns:mob?"1fr":"repeat(3,1fr)",gap:14}}>
@@ -832,7 +832,7 @@ export default function WIRAnalytics({ user, onBack }) {
         {Object.keys(catPreds).length>0&&(
           <CollapsibleSection title="AI PREDICTED APPROVAL DAYS (per activity)" emoji="🤖"
             color="#7c3aed" collapsed={collapsed.predictions} onToggle={()=>toggle('predictions')}>
-            <PredictionSummary actPreds={actPreds} catPreds={catPreds}/>
+            <PredictionSummary actPreds={actPreds} catPreds={catPreds} mob={mob}/>
           </CollapsibleSection>
         )}
 
