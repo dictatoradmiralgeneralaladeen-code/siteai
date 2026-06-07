@@ -729,7 +729,7 @@ export default function WIRAnalytics({ user, onBack }) {
         {/* SECTION: Overview — 3 column layout */}
         <CollapsibleSection title="PROJECT OVERVIEW & STATUS SUMMARY" emoji="📊"
           color="#0284c7" collapsed={collapsed.overview} onToggle={()=>toggle('overview')}>
-          <div style={{display:"grid",gridTemplateColumns:"270px 1fr 1fr",gap:14,alignItems:"start"}}>
+          <div style={{display:"grid",gridTemplateColumns:window.innerWidth<768?"1fr":"270px 1fr 1fr",gap:14,alignItems:"start"}}>
 
             {/* LEFT: All IRs Pie */}
             <div style={{background:"#f8fafc",borderRadius:10,padding:16,border:"1px solid #e2e8f0"}}>
