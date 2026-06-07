@@ -16,7 +16,7 @@ app = FastAPI()
 app.add_middleware(CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://siteai.vercel.app",  # ← your actual Vercel URL
+        "https://siteai-two.vercel.app",  # ← your actual Vercel URL
         "https://*.vercel.app"
     ],
     allow_credentials=True,
