@@ -1,8 +1,21 @@
-const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
-
+import { exportWIRToExcel } from './excelExport'
+import InspectionUpdate from './InspectionUpdate'
+import PDFModal from './PDFModal'
 import { useState, useEffect, useRef, useMemo } from "react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend,
          CartesianGrid, ResponsiveContainer } from "recharts"
+
+const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
+
+function useIsMobile() {
+  const [mob, setMob] = useState(window.innerWidth < 768)
+  useEffect(() => {
+    const fn = () => setMob(window.innerWidth < 768)
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
+  return mob
+}
 
 // ── CONSTANTS ────────────────────────────────────────────
 const STATUS_COLORS = {
@@ -201,22 +214,30 @@ function StatusSummaryBox({ allData, statusFilter, title, color }) {
 
 // ── SECTION WRAPPER ───────────────────────────────────────
 function CollapsibleSection({ title, emoji, color="#0284c7", collapsed, onToggle, children, right }) {
+  const mob = useIsMobile()
   return (
-    <div style={{...T.section,marginBottom:14}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
-        cursor:"pointer",marginBottom:collapsed?0:14}} onClick={onToggle}>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:15}}>{emoji}</span>
-          <span style={{...T.label,color,fontSize:11}}>{title}</span>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:12}}>
-          {right&&<div onClick={e=>e.stopPropagation()}>{right}</div>}
-          <span style={{color:"#9ca3af",fontSize:11,fontWeight:600}}>
+    <div style={{...T.section, marginBottom:14}}>
+      <div style={{cursor:"pointer",marginBottom:collapsed?0:14}}>
+        {/* Top row: title + hide button */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",
+          marginBottom:right&&!collapsed&&mob?10:0}}
+          onClick={onToggle}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:15}}>{emoji}</span>
+            <span style={{...T.label,color,fontSize:11}}>{title}</span>
+          </div>
+          <span style={{color:"#9ca3af",fontSize:11,fontWeight:600,flexShrink:0,marginLeft:8}}>
             {collapsed?"▼ Show":"▲ Hide"}
           </span>
         </div>
+        {/* Right content (filter dropdowns) — separate row on mobile */}
+        {right && !collapsed && (
+          <div style={{marginTop:8}} onClick={e=>e.stopPropagation()}>
+            {right}
+          </div>
+        )}
       </div>
-      {!collapsed&&children}
+      {!collapsed && children}
     </div>
   )
 }
@@ -225,7 +246,7 @@ function CollapsibleSection({ title, emoji, color="#0284c7", collapsed, onToggle
 function PredictionSummary({ actPreds, catPreds }) {
   const cats=['Substructure','Structure','Finishing']
   return (
-    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+    <div style={{display:"grid",gridTemplateColumns:mob?"1fr":"repeat(3,1fr)",gap:14}}>
       {cats.map(cat=>{
         const s=catPreds[cat]; if(!s) return null
         const acts=Object.entries(actPreds).filter(([,v])=>v.category===cat).sort((a,b)=>b[1].count-a[1].count)
@@ -409,6 +430,7 @@ ${rows.length<total?`<div class="note">⚠ Report shows first ${MAX} of ${total}
 const ROWS_PER_PAGE=100
 
 export default function WIRAnalytics({ user, onBack }) {
+  const mob = useIsMobile()
   const [data,setData]           = useState([])
   const [actPreds,setActPreds]   = useState({})
   const [catPreds,setCatPreds]   = useState({})
@@ -729,7 +751,7 @@ export default function WIRAnalytics({ user, onBack }) {
         {/* SECTION: Overview — 3 column layout */}
         <CollapsibleSection title="PROJECT OVERVIEW & STATUS SUMMARY" emoji="📊"
           color="#0284c7" collapsed={collapsed.overview} onToggle={()=>toggle('overview')}>
-          <div style={{display:"grid",gridTemplateColumns:window.innerWidth<768?"1fr":"270px 1fr 1fr",gap:14,alignItems:"start"}}>
+          <div style={{display:"grid",gridTemplateColumns:mob?"1fr":"270px 1fr 1fr",gap:14,alignItems:"start"}}>
 
             {/* LEFT: All IRs Pie */}
             <div style={{background:"#f8fafc",borderRadius:10,padding:16,border:"1px solid #e2e8f0"}}>
@@ -773,11 +795,11 @@ export default function WIRAnalytics({ user, onBack }) {
         <CollapsibleSection title="WEEKLY REJECTION TREND — Last 3 Months" emoji="📉"
           color="#dc2626" collapsed={collapsed.rejection} onToggle={()=>toggle('rejection')}
           right={
-            <div style={{display:"flex",gap:8}}>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
               <MultiSelect label="Category" options={allChartCats} selected={rejLineCats}
-                onChange={setRejLineCats} color="#d97706" width={130}/>
+                onChange={setRejLineCats} color="#d97706" width={mob?130:130}/>
               <MultiSelect label="Activity" options={allChartActs} selected={rejLineActs}
-                onChange={setRejLineActs} color="#dc2626" width={150}/>
+                onChange={setRejLineActs} color="#dc2626" width={mob?130:150}/>
             </div>
           }>
           {weeklyRejLine.length>0?(
@@ -825,7 +847,10 @@ export default function WIRAnalytics({ user, onBack }) {
               {label:"Pending",val:pendCnt,color:"#ea580c"},
               {label:"Rejection %",val:`${rejPct}%`,color:"#dc2626",big:true},
             ].map(({label,val,color,big})=>(
-              <div key={label} style={{...T.card,padding:"12px 16px",borderLeft:`3px solid ${color}`,
+              <div key={label} style={{...T.card,padding:"12px 16px",
+                borderLeft:`3px solid ${color}`,
+                flex:mob?"1 1 calc(33% - 10px)":"0 0 auto",
+                minWidth:mob?90:undefined,
                 ...(big?{border:`2px solid ${color}`,boxShadow:`0 0 0 3px ${color}18`}:{})}}>
                 <div style={{color,fontSize:big?24:20,fontWeight:900,lineHeight:1}}>{val}</div>
                 <div style={{color:"#6b7280",fontSize:10,marginTop:3,lineHeight:1.4}}>{label}</div>
@@ -857,7 +882,7 @@ export default function WIRAnalytics({ user, onBack }) {
               ✕ Clear ({active})
             </button>
           )}>
-          <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:16,alignItems:"start"}}>
+          <div style={{display:"grid",gridTemplateColumns:mob?"1fr":"1fr auto",gap:16,alignItems:"start"}}>
             <div>
               <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:10}}>
                 <MultiSelect label="Frond" options={unique("Frond")} selected={filters.frond}
@@ -1074,6 +1099,3 @@ export default function WIRAnalytics({ user, onBack }) {
 }
 
 
-import { exportWIRToExcel } from './excelExport'
-import InspectionUpdate from './InspectionUpdate'
-import PDFModal from './PDFModal'
