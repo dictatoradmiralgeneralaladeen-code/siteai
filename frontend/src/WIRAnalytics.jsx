@@ -1,3 +1,5 @@
+const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
+
 import { useState, useEffect, useRef, useMemo } from "react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend,
          CartesianGrid, ResponsiveContainer } from "recharts"
@@ -434,7 +436,7 @@ export default function WIRAnalytics({ user, onBack }) {
 
   useEffect(()=>{
     setLoading(true)
-    fetch("http://127.0.0.1:8000/analytics/data")
+    fetch(`${API}/analytics/data`)
       .then(r=>r.json())
       .then(j=>{
         if(j.success){
@@ -450,7 +452,7 @@ export default function WIRAnalytics({ user, onBack }) {
     setUploading(true)
     const form=new FormData(); form.append("file",file)
     try{
-      const res=await fetch("http://127.0.0.1:8000/analytics/upload",{method:"POST",body:form})
+      const res = await fetch(`${API}/analytics/upload`, {method:"POST", body:form})
       const j=await res.json()
       if(j.success){
         setData(j.data); setUpAt(j.uploaded_at); setPage(1)

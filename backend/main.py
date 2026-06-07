@@ -13,8 +13,16 @@ try:
 except: ML_OK = False
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173"],
-    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "https://siteai.vercel.app",  # ← your actual Vercel URL
+        "https://*.vercel.app"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 PROJECTS = {"SHAPOORJI":{"DMS-149063-3-F-M&N":{
     "company_name":"Shapoorji Pallonji Middle East LLC",
